@@ -454,6 +454,7 @@ func (h *HCI) handleLEConnectionComplete(b []byte) error {
 			case h.chMasterConn <- c:
 			default:
 				go c.Close()
+				h.chMasterConn <- &Conn{}
 			}
 			return nil
 		}

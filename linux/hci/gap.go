@@ -218,8 +218,11 @@ func (h *HCI) Dial(ctx context.Context, a ble.Addr) (ble.Client, error) {
 	case <-h.done:
 		return nil, h.err
 	case c := <-h.chMasterConn:
-		return gatt.NewClient(c)
-
+		if c.ctx != nil {
+			return gatt.NewClient(c)
+		} else {
+			return nil, fmt.Errorf("can't create a new client")
+		}
 	}
 }
 
