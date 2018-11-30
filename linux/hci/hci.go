@@ -428,6 +428,7 @@ func (h *HCI) handleCommandComplete(b []byte) error {
 
 	// Compare with the previous p.done and return nil if they are identical
 	if p.done == h.chBeforeDone {
+		close(p.done)
 		return nil
 	}
 	h.chBeforeDone = p.done // Keep previous p.done
