@@ -113,6 +113,9 @@ type HCI struct {
 	dialerTmo   time.Duration
 	listenerTmo time.Duration
 
+	// Keep previous pdone to avoid deadlock due to concurrent
+	chBeforeDone chan []byte
+
 	err  error
 	done chan bool
 }
@@ -422,6 +425,13 @@ func (h *HCI) handleCommandComplete(b []byte) error {
 	if !found {
 		return fmt.Errorf("can't find the cmd for CommandCompleteEP: % X", e)
 	}
+
+	// Compare with the previous p.done and return nil if they are identical
+	if p.done == h.chBeforeDone {
+		return nil
+	}
+	h.chBeforeDone = p.done // Keep previous p.done
+
 	p.done <- e.ReturnParameters()
 	return nil
 }
