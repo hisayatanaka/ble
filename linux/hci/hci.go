@@ -498,18 +498,8 @@ func (h *HCI) handleDisconnectionComplete(b []byte) error {
 	}
 	close(c.chInPkt)
 
-	if c.param.Role() == roleSlave {
-		// Re-enable advertising, if it was advertising. Refer to the
-		// handleLEConnectionComplete() for details.
-		// This may failed with ErrCommandDisallowed, if the controller
-		// was actually in advertising state. It does no harm though.
-		h.params.RLock()
-		if h.params.advEnable.AdvertisingEnable == 1 {
-			go h.Send(&h.params.advEnable, nil)
-		}
-		h.params.RUnlock()
-	} else {
-		// remote peripheral disconnected
+	// remote peripheral disconnected
+	if c.param.Role() != roleSlave {
 		close(c.chDone)
 	}
 	// When a connection disconnects, all the sent packets and weren't acked yet
