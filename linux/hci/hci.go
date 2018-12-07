@@ -465,20 +465,6 @@ func (h *HCI) handleLEConnectionComplete(b []byte) error {
 	}
 	if e.Status() == 0x00 {
 		h.chSlaveConn <- c
-		// When a controller accepts a connection, it moves from advertising
-		// state to idle/ready state. Host needs to explicitly ask the
-		// controller to re-enable advertising. Note that the host was most
-		// likely in advertising state. Otherwise it couldn't accept the
-		// connection in the first place. The only exception is that user
-		// asked the host to stop advertising during this tiny window.
-		// The re-enabling might failed or ignored by the controller, if
-		// it had reached the maximum number of concurrent connections.
-		// So we also re-enable the advertising when a connection disconnected
-		h.params.RLock()
-		if h.params.advEnable.AdvertisingEnable == 1 {
-			go h.Send(&h.params.advEnable, nil)
-		}
-		h.params.RUnlock()
 	}
 	return nil
 }
@@ -499,10 +485,15 @@ func (h *HCI) handleDisconnectionComplete(b []byte) error {
 	close(c.chInPkt)
 
 	if c.param.Role() == roleSlave {
-		// Re-enable advertising, if it was advertising. Refer to the
-		// handleLEConnectionComplete() for details.
-		// This may failed with ErrCommandDisallowed, if the controller
-		// was actually in advertising state. It does no harm though.
+		// When a controller accepts a connection, it moves from advertising
+		// state to idle/ready state. Host needs to explicitly ask the
+		// controller to re-enable advertising. Note that the host was most
+		// likely in advertising state. Otherwise it couldn't accept the
+		// connection in the first place. The only exception is that user
+		// asked the host to stop advertising during this tiny window.
+		// The re-enabling might failed or ignored by the controller, if
+		// it had reached the maximum number of concurrent connections.
+		// So we also re-enable the advertising when a connection disconnected
 		h.params.RLock()
 		if h.params.advEnable.AdvertisingEnable == 1 {
 			go h.Send(&h.params.advEnable, nil)
